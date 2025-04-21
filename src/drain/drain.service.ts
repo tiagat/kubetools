@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { styleText } from 'node:util';
+import { createInterface } from 'node:readline/promises';
+import { stdin, stdout } from 'node:process';
 import {
   KubeConfig,
   CoreV1Api,
@@ -20,6 +22,13 @@ export class DrainService {
       fieldSelector: `spec.nodeName=${node}`,
     });
     return items;
+  }
+
+  async isYes(): Promise<boolean> {
+    const rl = createInterface({ input: stdin, output: stdout });
+    const answer = await rl.question('Do you want to proceed? (y/n): ');
+    rl.close();
+    return answer.toLowerCase() === 'y';
   }
 
   async getNodes(): Promise<V1Node[]> {
@@ -128,6 +137,9 @@ export class DrainService {
     this.k8sApi = k8sConfig.makeApiClient(CoreV1Api);
 
     const nodes = await this.getNodes();
+
+    if (!(await this.isYes())) return;
+
     for (const node of nodes) {
       await this.drainNode(node);
     }
