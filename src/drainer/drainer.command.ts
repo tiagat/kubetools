@@ -3,6 +3,7 @@ import { DrainerService } from './drainer.service';
 
 interface DrainerCommandOptions {
   kubeconfig?: string;
+  selector?: string;
 }
 
 @Command({
@@ -22,8 +23,15 @@ export class DrainerCommand extends CommandRunner {
     return val;
   }
 
+  @Option({
+    flags: '-l, --selector <query>',
+    description: 'Label selector to filter nodes',
+  })
+  selector(val: string): string {
+    return val;
+  }
+
   async run(passedParam: string[], options?: DrainerCommandOptions) {
-    const kubeconfig = options?.kubeconfig;
-    await this.drainer.start(kubeconfig);
+    await this.drainer.start(options?.kubeconfig, options?.selector);
   }
 }

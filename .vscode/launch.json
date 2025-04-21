@@ -11,7 +11,9 @@
       "args": [
         "--",
         "-k",
-        "~/goreel/kubeconfigs/dev.rnd-ops3.goreel.tech.config"
+        "~/goreel/kubeconfigs/dev.rnd-ops3.goreel.tech.config",
+        "-l",
+        "node-role.kubernetes.io/node,migrated"
       ],
       "runtimeExecutable": "npm",
       "skipFiles": ["<node_internals>/**"],

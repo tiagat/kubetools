@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { KubeConfig, CoreV1Api } from '@kubernetes/client-node';
+import { KubeConfig, CoreV1Api, V1Node, V1Pod } from '@kubernetes/client-node';
 
 @Injectable()
 export class DrainerService {
   k8sApi: CoreV1Api;
   labelSelector = 'node-role.kubernetes.io/node,!migrated';
 
-  async getNodes(): Promise<string[]> {
+  async getNodes(): Promise<V1Node[]> {
     console.log('Define node selector:', this.labelSelector);
     console.log('List cluster nodes...');
     try {
@@ -14,16 +14,38 @@ export class DrainerService {
         labelSelector: this.labelSelector,
       });
       console.log(` * Found ${items.length} nodes`);
+      return items;
     } catch (err) {
       console.error(err);
       throw err;
     }
-
-    return [];
   }
 
-  async start(kubeconfig?: string): Promise<void> {
+  async drainNode(node: V1Node): Promise<void> {
+    try {
+      const { items } = await this.k8sApi.listPodForAllNamespaces({
+        fieldSelector: `spec.nodeName=${node.metadata?.name}`,
+      });
+      console.log(
+        `\nDrain Node: ${node.metadata?.name} (${items.length} pods):\n`,
+      );
+      for (const pod of items) {
+        await this.evictPod(pod);
+      }
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  }
+
+  async evictPod(pod: V1Pod) {
+    console.log(` * Pod: ${pod.metadata?.name}`);
+  }
+
+  async start(kubeconfig?: string, selector?: string): Promise<void> {
     const k8sConfig = new KubeConfig();
+
+    if (selector) this.labelSelector = selector;
     if (kubeconfig) {
       k8sConfig.loadFromFile(kubeconfig);
     } else {
@@ -31,9 +53,9 @@ export class DrainerService {
     }
     this.k8sApi = k8sConfig.makeApiClient(CoreV1Api);
 
-    await Promise.resolve();
-    console.log('Safely drain all Nodes...');
-
-    await this.getNodes();
+    const nodes = await this.getNodes();
+    for (const node of nodes) {
+      await this.drainNode(node);
+    }
   }
 }
