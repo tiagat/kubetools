@@ -1,10 +1,26 @@
 import { Injectable } from '@nestjs/common';
-import { KubeConfig, CoreV1Api, V1Node, V1Pod } from '@kubernetes/client-node';
+import { styleText } from 'node:util';
+import {
+  KubeConfig,
+  CoreV1Api,
+  V1Node,
+  V1Pod,
+  V1Eviction,
+} from '@kubernetes/client-node';
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 @Injectable()
 export class DrainerService {
   k8sApi: CoreV1Api;
   labelSelector = 'node-role.kubernetes.io/node,!migrated';
+
+  async getPods(node: string): Promise<V1Pod[]> {
+    const { items } = await this.k8sApi.listPodForAllNamespaces({
+      fieldSelector: `spec.nodeName=${node}`,
+    });
+    return items;
+  }
 
   async getNodes(): Promise<V1Node[]> {
     console.log('Define node selector:', this.labelSelector);
@@ -23,15 +39,16 @@ export class DrainerService {
 
   async drainNode(node: V1Node): Promise<void> {
     try {
-      const { items } = await this.k8sApi.listPodForAllNamespaces({
-        fieldSelector: `spec.nodeName=${node.metadata?.name}`,
-      });
+      const pods = await this.getPods(node.metadata!.name!);
       console.log(
-        `\nDrain Node: ${node.metadata?.name} (${items.length} pods):\n`,
+        `\nDrain Node: ${node.metadata?.name} (${pods.length} pods):\n`,
       );
-      for (const pod of items) {
+      for (const pod of pods) {
         await this.evictPod(pod);
       }
+      console.log('\n');
+      await this.validateCluster();
+      console.log('Cluster validated\n');
     } catch (err) {
       console.error(err);
       throw err;
@@ -39,7 +56,61 @@ export class DrainerService {
   }
 
   async evictPod(pod: V1Pod) {
-    console.log(` * Pod: ${pod.metadata?.name}`);
+    const { name, namespace } = pod.metadata!;
+    if (!name || !namespace) return;
+
+    const evictionRequest: V1Eviction = {
+      apiVersion: 'policy/v1',
+      kind: 'Eviction',
+      metadata: {
+        name: name,
+        namespace: namespace,
+      },
+    };
+
+    try {
+      await this.k8sApi.createNamespacedPodEviction({
+        name,
+        namespace: namespace,
+        body: evictionRequest,
+      });
+      console.log(` * Pod: [${pod.metadata?.name}] - evicted`);
+    } catch (err) {
+      console.error(
+        styleText('red', ` * Pod: [${pod.metadata?.name}] - error: ${err} `),
+      );
+    }
+  }
+
+  async validateCluster(revalidating = false): Promise<void> {
+    const { items } = await this.k8sApi.listPodForAllNamespaces({
+      fieldSelector: 'status.phase!=Running',
+    });
+
+    const criticalPods = items.filter((pod) => {
+      const { priorityClassName } = pod.spec!;
+      if (!priorityClassName) return false;
+      const criticalClasses = [
+        'system-node-critical',
+        'system-cluster-critical',
+      ];
+      return criticalClasses.includes(priorityClassName);
+    });
+
+    if (criticalPods.length > 0) {
+      const timeout = 10000;
+      console.log(
+        `Wait for critical pods [${criticalPods.length} pods] to be running (${timeout / 1000}s)...`,
+      );
+      await sleep(timeout);
+      await this.validateCluster();
+    }
+
+    if (criticalPods.length === 0 && !revalidating) {
+      console.log('Revalidating in 10s to make sure it does not flap');
+      await sleep(10000);
+      await this.validateCluster(true);
+    }
   }
 
   async start(kubeconfig?: string, selector?: string): Promise<void> {
