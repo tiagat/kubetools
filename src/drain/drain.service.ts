@@ -98,7 +98,7 @@ export class DrainService {
     });
 
     if (criticalPods.length > 0) {
-      const timeout = 30000;
+      const timeout = 10000;
       console.log(
         `Wait for critical pods [${criticalPods.length} pods] to be running (${timeout / 1000}s)...`,
       );

@@ -1,0 +1,12 @@
+apiVersion: k3d.io/v1alpha3
+kind: Simple
+name: default
+servers: 1
+agents: 4
+options:
+  k3s:
+    nodeLabels:
+      - label: migrated=yes
+        nodeFilters:
+          - agent:2
+          - agent:3
