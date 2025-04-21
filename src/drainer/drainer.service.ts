@@ -98,7 +98,7 @@ export class DrainerService {
     });
 
     if (criticalPods.length > 0) {
-      const timeout = 10000;
+      const timeout = 30000;
       console.log(
         `Wait for critical pods [${criticalPods.length} pods] to be running (${timeout / 1000}s)...`,
       );
@@ -107,8 +107,11 @@ export class DrainerService {
     }
 
     if (criticalPods.length === 0 && !revalidating) {
-      console.log('Revalidating in 10s to make sure it does not flap');
-      await sleep(10000);
+      const timeout = 10000;
+      console.log(
+        `Revalidating in ${timeout / 1000}s to make sure it does not flap`,
+      );
+      await sleep(timeout);
       await this.validateCluster(true);
     }
   }
