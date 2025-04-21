@@ -2,13 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { styleText } from 'node:util';
 import { createInterface } from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
-import {
-  KubeConfig,
-  CoreV1Api,
-  V1Node,
-  V1Pod,
-  V1Eviction,
-} from '@kubernetes/client-node';
+import { KubeConfig, CoreV1Api, V1Node, V1Pod, V1Eviction } from '@kubernetes/client-node';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -49,9 +43,7 @@ export class DrainService {
   async drainNode(node: V1Node): Promise<void> {
     try {
       const pods = await this.getPods(node.metadata!.name!);
-      console.log(
-        `\nDrain Node: ${node.metadata?.name} (${pods.length} pods):\n`,
-      );
+      console.log(`\nDrain Node: ${node.metadata?.name} (${pods.length} pods):\n`);
       for (const pod of pods) {
         await this.evictPod(pod);
       }
@@ -85,9 +77,7 @@ export class DrainService {
       });
       console.log(` * Pod: [${pod.metadata?.name}] - evicted`);
     } catch (err) {
-      console.error(
-        styleText('red', ` * Pod: [${pod.metadata?.name}] - error: ${err} `),
-      );
+      console.error(styleText('red', ` * Pod: [${pod.metadata?.name}] - error: ${err} `));
     }
   }
 
@@ -99,27 +89,20 @@ export class DrainService {
     const criticalPods = items.filter((pod) => {
       const { priorityClassName } = pod.spec!;
       if (!priorityClassName) return false;
-      const criticalClasses = [
-        'system-node-critical',
-        'system-cluster-critical',
-      ];
+      const criticalClasses = ['system-node-critical', 'system-cluster-critical'];
       return criticalClasses.includes(priorityClassName);
     });
 
     if (criticalPods.length > 0) {
       const timeout = 10000;
-      console.log(
-        `Wait for critical pods [${criticalPods.length} pods] to be running (${timeout / 1000}s)...`,
-      );
+      console.log(`Wait for critical pods [${criticalPods.length} pods] to be running (${timeout / 1000}s)...`);
       await sleep(timeout);
       await this.validateCluster();
     }
 
     if (criticalPods.length === 0 && !revalidating) {
       const timeout = 10000;
-      console.log(
-        `Revalidating in ${timeout / 1000}s to make sure it does not flap`,
-      );
+      console.log(`Revalidating in ${timeout / 1000}s to make sure it does not flap`);
       await sleep(timeout);
       await this.validateCluster(true);
     }
@@ -129,6 +112,7 @@ export class DrainService {
     const k8sConfig = new KubeConfig();
 
     if (selector) this.labelSelector = selector;
+
     if (kubeconfig) {
       k8sConfig.loadFromFile(kubeconfig);
     } else {
