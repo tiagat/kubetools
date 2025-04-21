@@ -1,4 +1,4 @@
 {
   "main": "dist/main.js",
-  "output": "build/kubetools.blob"
+  "output": "build/sea-prep.blob"
 }
