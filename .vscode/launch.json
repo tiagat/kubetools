@@ -8,13 +8,6 @@
       "name": "drainer",
       "request": "launch",
       "runtimeArgs": ["run-script", "start:drainer"],
-      "args": [
-        "--",
-        "-k",
-        "~/goreel/kubeconfigs/dev.rnd-ops3.goreel.tech.config",
-        "-l",
-        "node-role.kubernetes.io/node,migrated"
-      ],
       "runtimeExecutable": "npm",
       "skipFiles": ["<node_internals>/**"],
       "type": "node",
