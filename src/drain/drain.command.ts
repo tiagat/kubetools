@@ -1,17 +1,17 @@
 import { Command, CommandRunner, Option } from 'nest-commander';
-import { DrainerService } from './drainer.service';
+import { DrainService } from './drain.service';
 
-interface DrainerCommandOptions {
+interface DrainCommandOptions {
   kubeconfig?: string;
   selector?: string;
 }
 
 @Command({
-  name: 'drainer',
+  name: 'drain',
   description: 'Safely drain all nodes',
 })
-export class DrainerCommand extends CommandRunner {
-  constructor(private readonly drainer: DrainerService) {
+export class DrainCommand extends CommandRunner {
+  constructor(private readonly drain: DrainService) {
     super();
   }
 
@@ -31,7 +31,7 @@ export class DrainerCommand extends CommandRunner {
     return val;
   }
 
-  async run(passedParam: string[], options?: DrainerCommandOptions) {
-    await this.drainer.start(options?.kubeconfig, options?.selector);
+  async run(passedParam: string[], options?: DrainCommandOptions) {
+    await this.drain.start(options?.kubeconfig, options?.selector);
   }
 }

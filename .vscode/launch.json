@@ -5,9 +5,9 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "drainer",
+      "name": "drain",
       "request": "launch",
-      "runtimeArgs": ["run-script", "start:drainer"],
+      "runtimeArgs": ["run-script", "start:drain"],
       "runtimeExecutable": "npm",
       "skipFiles": ["<node_internals>/**"],
       "type": "node",

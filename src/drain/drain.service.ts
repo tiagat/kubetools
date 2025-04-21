@@ -11,7 +11,7 @@ import {
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 @Injectable()
-export class DrainerService {
+export class DrainService {
   k8sApi: CoreV1Api;
   labelSelector = 'node-role.kubernetes.io/node,!migrated';
 

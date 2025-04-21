@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { DrainerModule } from './drainer/drainer.module';
+import { DrainModule } from './drain/drain.module';
 import { ScalerModule } from './scaler/scaler.module';
 
 @Module({
-  imports: [DrainerModule, ScalerModule],
+  imports: [DrainModule, ScalerModule],
   controllers: [],
   providers: [],
 })
