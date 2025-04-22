@@ -60,6 +60,14 @@ export class DrainService {
     const { name, namespace } = pod.metadata!;
     if (!name || !namespace) return;
 
+    const ownerReferences = pod.metadata?.ownerReferences || [];
+    const ownerReferencesKind = ownerReferences.map((owner) => owner.kind);
+
+    if (ownerReferencesKind.includes('DaemonSet')) {
+      console.log(styleText('gray', ` * Pod: [${pod.metadata?.name}] - skipped (DaemonSet)`));
+      return;
+    }
+
     const evictionRequest: V1Eviction = {
       apiVersion: 'policy/v1',
       kind: 'Eviction',
