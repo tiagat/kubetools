@@ -47,6 +47,8 @@ export class DrainService {
       for (const pod of pods) {
         await this.evictPod(pod);
       }
+      console.log('Waiting for 5s for pods to stabilize after draining');
+      await sleep(5000);
       console.log('\n');
       await this.validateCluster();
       console.log('Cluster validated\n');
